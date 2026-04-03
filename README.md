@@ -1,17 +1,27 @@
-# 🦜 Canary USB Sentinel
+<p align="center">
+  <img src="Canary-USB-Scanner.png" alt="Canary USB Sentinel Banner">
+</p>
 
-**Canary USB Sentinel** es un script avanzado en PowerShell diseñado para la monitorización en tiempo real de puertos USB. Su objetivo es detectar archivos sospechosos y scripts maliciosos de ejecución automática en dispositivos de almacenamiento externo.
+<p align="center">
+  <img src="https://img.shields.io/badge/Language-PowerShell-1aff8c?style=flat-square&logo=powershell&logoColor=000&labelColor=0d1a12" alt="PowerShell">
+  <img src="https://img.shields.io/badge/Status-Active-7ef7c0?style=flat-square&logo=github&logoColor=000&labelColor=0d1a12" alt="Status">
+</p>
+
+# 🦜 CANARY USB SENTINEL v1.0
+
+**Canary USB Sentinel** es un script avanzado de monitorización táctica en PowerShell, diseñado para la detección en tiempo real de amenazas (IoC) en dispositivos de almacenamiento externo USB.
 
 ## 🚀 Funcionalidades
-- **Monitorización en Tiempo Real:** Utiliza eventos WMI para detectar la inserción de hardware instantáneamente.
-- **Detección de IoCs (Indicadores de Compromiso):** Escanea extensiones críticas (`.vbs`, `.ps1`, `.bat`, `.hta`) y archivos ocultos.
-- **Aislamiento Automático:** Expulsa la unidad automáticamente si detecta una amenaza.
-- **Auditoría:** Genera un log de eventos en la carpeta de Documentos para análisis forense posterior.
+- **Monitorización en Tiempo Real:** Detecta la inserción de hardware instantáneamente mediante eventos WMI.
+- **Escaneo de Amenazas:** Identifica extensiones críticas (`.vbs`, `.ps1`, `.bat`, `.hta`) y archivos ocultos sospechosos.
+- **Aislamiento Automático:** Expulsa la unidad automáticamente si detecta un patrón malicioso.
+- **Auditoría Forense:** Genera un log detallado en la carpeta de Documentos.
 
-## 🛠️ Instalación
-1. Clona el repositorio: `git clone https://github.com/0xBlackCanary/Canary-USB-Scanner`
-2. Ejecuta PowerShell como Administrador.
-3. Ejecuta el script: `.\Canary-USB-Scanner.ps1`
+## 🛠️ Instalación y Uso
+1. Descarga el archivo `Canary-USB-Scanner.ps1`.
+2. Ejecuta PowerShell como **Administrador**.
+3. Lanza el script: `.\Canary-USB-Scanner.ps1`
 
-## ⚠️ Disclaimer
-Este software se proporciona con fines educativos y de seguridad preventiva. La autora no se hace responsable del uso indebido de esta herramienta.
+---
+### ⚠️ Aviso Legal
+Este software se proporciona con fines educativos y de seguridad preventiva. La autora (**0xBlackCanary**) no se hace responsable del uso indebido de esta herramienta.
