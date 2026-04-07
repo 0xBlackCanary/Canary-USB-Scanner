@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Status-Active-7ef7c0?style=flat-square&logo=github&logoColor=000&labelColor=0d1a12" alt="Status">
 </p>
 
-#   CANARY USB SENTINEL v1.1
+#   CANARY USB SENTINEL v1.0
 #   Vigilancia silenciosa estilo Canary Token
 #   Para 0xBlackCanary 🦜
 
