@@ -1,7 +1,7 @@
 # =============================================
 #   CANARY USB SENTINEL v1.1
-#   Vigilancia silenciosa - Estilo Canary Token
-#   Para 0xBlackCanary ❤️
+#   Vigilancia silenciosa estilo Canary Token
+#   Para 0xBlackCanary 🦜
 # =============================================
 
 param(
@@ -27,7 +27,6 @@ function Write-Log {
 function Send-ToastNotification {
     param([string]$Title, [string]$Message, [string]$Type = "Warning")
     if (-not $Config.ShowNotifications) { return }
-    
     try {
         New-BurntToastNotification -Text $Title, $Message `
             -Sound "Alarm" -ExpirationTime (Get-Date).AddMinutes(5) | Out-Null
@@ -36,11 +35,10 @@ function Send-ToastNotification {
 
 # ================== INICIO ==================
 Clear-Host
-Write-Host "`n🛡️  CANARY USB SENTINEL v1.1 - Activo" -ForegroundColor Cyan
-Write-Host "   Modo de vigilancia silenciosa iniciado..." -ForegroundColor Gray
+Write-Host "`n🦜 CANARY USB SENTINEL v1.1 - Activo" -ForegroundColor Cyan
+Write-Host "   🛡️  Vigilancia silenciosa estilo Canary Token iniciada..." -ForegroundColor Gray
 Write-Log "=== CANARY USB SENTINEL INICIADO ==="
 
-# Crear log si no existe
 if (-not (Test-Path $Config.LogPath)) {
     New-Item -Path $Config.LogPath -ItemType File -Force | Out-Null
 }
@@ -48,11 +46,10 @@ if (-not (Test-Path $Config.LogPath)) {
 Write-Host "`n✅ Sentinel en espera. Inserta un USB para activar la detección." -ForegroundColor Green
 Write-Host "   (Ctrl+C para detener)" -ForegroundColor DarkGray
 
-# ================== MONITOREO WMI ==================
+# ================== MONITOREO ==================
 $query = "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_DiskDrive' AND TargetInstance.InterfaceType = 'USB'"
 
 Register-WmiEvent -Query $query -SourceIdentifier "CanaryUSBWatcher" -Action {
-
     $usb = $EventArgs.NewEvent.TargetInstance
     $usbName = if ($usb.Model) { $usb.Model.Trim() } else { "USB Desconocido" }
 
@@ -73,8 +70,8 @@ Register-WmiEvent -Query $query -SourceIdentifier "CanaryUSBWatcher" -Action {
                 Write-Host "   Unidad: $driveLetter" -ForegroundColor Green
 
                 $suspiciousFiles = Get-ChildItem -Path "$driveLetter\" -Recurse -Force -ErrorAction SilentlyContinue |
-                    Where-Object { 
-                        $_.Extension -in $Config.DangerousExt -or 
+                    Where-Object {
+                        $_.Extension -in $Config.DangerousExt -or
                         $_.Name -eq 'autorun.inf' -or
                         ($_.Attributes -match 'Hidden' -and $_.Name -like '.*')
                     } |
@@ -82,13 +79,12 @@ Register-WmiEvent -Query $query -SourceIdentifier "CanaryUSBWatcher" -Action {
 
                 if ($suspiciousFiles) {
                     Write-Host "   🚨 PELIGRO DETECTADO" -ForegroundColor Red
-                    
                     $suspiciousFiles | ForEach-Object {
                         Write-Host "      → $($_.FullName)" -ForegroundColor Red
                     }
 
                     Write-Log "¡ALERTA! Archivos sospechosos en $usbName ($driveLetter)"
-                    $suspiciousFiles | ForEach-Object { Write-Log "   → $($_.FullName)" }
+                    $suspiciousFiles | ForEach-Object { Write-Log "      → $($_.FullName)" }
 
                     if ($Config.AlertSound) {
                         for($i=0; $i -lt 5; $i++) {
@@ -121,8 +117,9 @@ Register-WmiEvent -Query $query -SourceIdentifier "CanaryUSBWatcher" -Action {
     }
 }
 
-# Mantener vivo
-try { while ($true) { Start-Sleep -Seconds 2 } }
+try { 
+    while ($true) { Start-Sleep -Seconds 2 } 
+}
 catch {
     Write-Host "`n🛑 Canary USB Sentinel detenido." -ForegroundColor Cyan
     Write-Log "Sentinel detenido por el usuario"
