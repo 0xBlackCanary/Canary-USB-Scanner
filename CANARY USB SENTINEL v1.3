@@ -1,0 +1,139 @@
+# =============================================
+#   CANARY USB SENTINEL v1.3
+#   Vigilancia inteligente estilo Canary Token
+#   Para 0xBlackCanary 🦜
+# =============================================
+
+param([switch]$Silent)
+
+# ================== CONFIGURACIÓN ==================
+$Config = @{
+    LogPath           = "$env:USERPROFILE\Desktop\Canary_USB_Log.txt"
+    AlertSound        = $true
+    AutoEject         = $true
+    ShowNotifications = $true
+    
+    # Muy peligrosos → Alerta fuerte + Expulsión automática
+    HighRiskExt       = @('.bat','.cmd','.scr','.vbs','.ps1','.hta','.wsf','.jse','.lnk')
+    HighRiskNames     = @('autorun.inf')
+    
+    # Sospechosos → Solo aviso (no expulsa)
+    MediumRiskExt     = @('.exe')
+}
+
+# ================== FUNCIONES ==================
+function Write-Log {
+    param([string]$Message)
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    Add-Content -Path $Config.LogPath -Value "$timestamp - $Message" -ErrorAction SilentlyContinue
+}
+
+function Send-ToastNotification {
+    param([string]$Title, [string]$Message, [string]$Type = "Warning")
+    if (-not $Config.ShowNotifications) { return }
+    try {
+        New-BurntToastNotification -Text $Title, $Message -Sound "Alarm" | Out-Null
+    } catch { }
+}
+
+# ================== INICIO ==================
+Clear-Host
+Write-Host "`n🦜 CANARY USB SENTINEL v1.3 - Activo" -ForegroundColor Cyan
+Write-Host "   🛡️ Vigilancia inteligente iniciada..." -ForegroundColor Gray
+Write-Log "=== CANARY USB SENTINEL INICIADO v1.3 ==="
+
+if (-not (Test-Path $Config.LogPath)) {
+    New-Item -Path $Config.LogPath -ItemType File -Force | Out-Null
+}
+
+Write-Host "`n✅ Sentinel en espera. Inserta un USB para probar..." -ForegroundColor Green
+
+# ================== MONITOREO ==================
+$query = "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_DiskDrive' AND TargetInstance.InterfaceType = 'USB'"
+
+Register-WmiEvent -Query $query -SourceIdentifier "CanaryUSBWatcher" -Action {
+    $usb = $EventArgs.NewEvent.TargetInstance
+    $usbName = if ($usb.Model) { $usb.Model.Trim() } else { "USB Desconocido" }
+
+    Write-Host "`n[!] USB DETECTADO → $usbName" -ForegroundColor Yellow
+    Write-Log "USB detectado: $usbName"
+
+    Start-Sleep -Milliseconds 1200
+
+    $partitions = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskDrive.DeviceID='$($usb.DeviceID)'} WHERE AssocClass = Win32_DiskDriveToDiskPartition"
+
+    foreach ($partition in $partitions) {
+        $logicalDisks = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID='$($partition.DeviceID)'} WHERE AssocClass = Win32_LogicalDiskToPartition"
+
+        foreach ($logical in $logicalDisks) {
+            $driveLetter = $logical.DeviceID
+
+            if (Test-Path $driveLetter) {
+                Write-Host "   Unidad: $driveLetter" -ForegroundColor Green
+
+                $files = Get-ChildItem -Path "$driveLetter\" -Recurse -Force -ErrorAction SilentlyContinue
+
+                $highRisk = $files | Where-Object { 
+                    ($_.Extension -in $Config.HighRiskExt) -or 
+                    ($_.Name -in $Config.HighRiskNames) -or
+                    ($_.Attributes -match 'Hidden' -and $_.Name -like '.*')
+                }
+
+                $mediumRisk = $files | Where-Object { $_.Extension -in $Config.MediumRiskExt }
+
+                $totalRisk = $highRisk + $mediumRisk
+
+                if ($totalRisk) {
+                    Write-Host "   🚨 PELIGRO DETECTADO" -ForegroundColor Red
+                    
+                    $totalRisk | ForEach-Object {
+                        $riskLevel = if ($_.Extension -in $Config.HighRiskExt -or $_.Name -in $Config.HighRiskNames) { " [ALTO]" } else { " [MEDIO]" }
+                        Write-Host "      → $($_.FullName)$riskLevel" -ForegroundColor Red
+                    }
+
+                    Write-Log "¡ALERTA! Archivos sospechosos en $usbName ($driveLetter)"
+                    $totalRisk | ForEach-Object { Write-Log "      → $($_.FullName)" }
+
+                    if ($Config.AlertSound) {
+                        for($i=0; $i -lt 5; $i++) {
+                            [console]::beep(1100, 180)
+                            Start-Sleep -Milliseconds 80
+                            [console]::beep(750, 250)
+                        }
+                    }
+
+                    Send-ToastNotification -Title "🚨 Canary USB Alert" -Message "Archivos sospechosos en $usbName"
+
+                    # Solo expulsa si hay riesgo ALTO
+                    if ($highRisk -and $Config.AutoEject) {
+                        Write-Host "   Expulsando USB automáticamente..." -ForegroundColor Red
+                        try {
+                            $shell = New-Object -ComObject Shell.Application
+                            $shell.Namespace(17).ParseName($driveLetter).InvokeVerb("Eject")
+                            Write-Host "   ✅ USB expulsado" -ForegroundColor Green
+                            Write-Log "USB expulsado automáticamente"
+                        } catch {
+                            Write-Host "   ⚠️ Expulsión manual recomendada" -ForegroundColor Yellow
+                        }
+                    }
+                    else {
+                        Write-Host "   ⚠️ Solo riesgo medio detectado - No se expulsó" -ForegroundColor Yellow
+                    }
+                }
+                else {
+                    Write-Host "   ✅ Unidad limpia" -ForegroundColor Green
+                    Write-Log "USB limpio: $usbName ($driveLetter)"
+                }
+            }
+        }
+    }
+}
+
+try { 
+    while ($true) { Start-Sleep -Seconds 2 } 
+}
+catch {
+    Write-Host "`n🛑 Canary USB Sentinel detenido." -ForegroundColor Cyan
+    Write-Log "Sentinel detenido por el usuario"
+    Unregister-Event -SourceIdentifier "CanaryUSBWatcher" -ErrorAction SilentlyContinue
+}
